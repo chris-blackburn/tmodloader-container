@@ -12,7 +12,7 @@ mkdir -p $SERVERDATA/.local/share/Terraria/dotnet
 ln -s $SERVERDATA/.local/share/Terraria/dotnet/ $SERVERDATA/tModLoader/dotnet
 
 function shutdown() {
-    tmux send-keys -t terraria "say Server poopy bed time" Enter
+    tmux send-keys -t terraria "say $SERVER_SHUTDOWN_MESSAGE" Enter
     tmux send-keys -t terraria "exit" Enter
     tmuxPid=$(pidof tmux)
 

@@ -12,6 +12,7 @@ RUN useradd -m -d /opt/terraria -s /bin/bash terraria \
     && ulimit -n 2048
 ENV USER=terraria
 ENV HOME=/opt/terraria
+ENV SERVER_SHUTDOWN_MESSAGE="Server shutting down!"
 WORKDIR $HOME
 
 # Update SteamCMD and verify latest version
