@@ -1,14 +1,9 @@
 version: '3'
 services:
   tml:
-    build:
-      context: .
-      args:
-        UID: 1000
-        GID: 1000
-    image: "calamity"
-    container_name: "terraria_calamity"
+    image: "tModLoader"
+    container_name: "tModLoader"
     ports:
-      - "7788:7777"
+      - "7777:7777"
     volumes:
       - "./Terraria:/opt/terraria/.local/share/Terraria"

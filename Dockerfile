@@ -1,34 +1,28 @@
-FROM docker.io/steamcmd/steamcmd:alpine-3
+FROM docker.io/steamcmd/steamcmd:ubuntu-22
 
 # Install prerequisites
-RUN apk update \
-    && apk add --no-cache bash curl tmux libstdc++ libgcc icu-libs \
-    && rm -rf /var/cache/apk/*
-
-# Fix 32 and 64 bit library conflicts
-RUN mkdir /steamlib \
-    && mv /lib/libstdc++.so.6 /steamlib \
-    && mv /lib/libgcc_s.so.1 /steamlib \
-    && ulimit -n 2048
-ENV LD_LIBRARY_PATH /steamlib
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        lib32stdc++6 lib32gcc-s1 lib32z1 libicu-dev \
+        bash curl unzip tmux \
+    && rm -rf /var/lib/apt/lists/*
 
 # create server user
-ARG UID
-ARG GID
-RUN addgroup -g $GID terraria \
-    && adduser terraria -u $UID -G terraria -h /opt/terraria -D
-USER terraria
-ENV USER terraria
-ENV HOME /opt/terraria
+RUN useradd -m -d /opt/terraria -s /bin/bash terraria \
+    && ulimit -n 2048
+ENV USER=terraria
+ENV HOME=/opt/terraria
 WORKDIR $HOME
 
 # Update SteamCMD and verify latest version
 RUN steamcmd +quit
 
 RUN curl -O https://raw.githubusercontent.com/tModLoader/tModLoader/1.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/manage-tModLoaderServer.sh \
-    && chmod u+x manage-tModLoaderServer.sh \
+    && chmod +x manage-tModLoaderServer.sh \
     && ./manage-tModLoaderServer.sh -i -g --no-mods \
-    && chmod u+x /opt/terraria/tModLoader/start-tModLoaderServer.sh
+    && chmod +x /opt/terraria/tModLoader/start-tModLoaderServer.sh \
+    && chmod +x /opt/terraria/tModLoader/LaunchUtils/*.sh \
+    && mkdir -p $HOME/.local/share/Terraria
 
 COPY scripts /opt/terraria
 EXPOSE 7777
