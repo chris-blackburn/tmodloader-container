@@ -1,44 +1,36 @@
-FROM debian:latest
+FROM docker.io/steamcmd/steamcmd:alpine-3
 
-ARG TMOD_SERVER_DIR="/opt/terraria"
-ARG SERVERDATA="/opt/serverdata"
+# Install prerequisites
+RUN apk update \
+    && apk add --no-cache bash curl tmux libstdc++ libgcc icu-libs \
+    && rm -rf /var/cache/apk/*
 
-ENV TMOD_VERSION="v2022.09.47.47"
-ENV TMOD_AUTODOWNLOAD="2824688072"
-ENV TMOD_ENABLEDMODS="2824688072"
-ENV GAME_PARAMS="-config /config/serverconfig.txt"
+# Fix 32 and 64 bit library conflicts
+RUN mkdir /steamlib \
+    && mv /lib/libstdc++.so.6 /steamlib \
+    && mv /lib/libgcc_s.so.1 /steamlib \
+    && ulimit -n 2048
+ENV LD_LIBRARY_PATH /steamlib
 
-EXPOSE 7777
-EXPOSE 9019
-
-RUN apt-get update && \
-    apt-get -y install --no-install-recommends \
-        libicu-dev lib32gcc-s1 lib32stdc++6 lib32z1 \
-        tmux unzip curl ca-certificates && \
-    rm -rf /var/lib/apt/lists/*
-
-RUN useradd -m -d ${TMOD_SERVER_DIR} -s /bin/bash terraria && \
-    mkdir -p ${SERVERDATA}/Worlds && \
-    ulimit -n 2048
-
-# Steam stuff
-RUN mkdir -p /opt/steam
-WORKDIR /opt/steam
-RUN curl -sqL http://media.steampowered.com/client/steamcmd_linux.tar.gz | tar zxvf - && \
-    chmod -R 755 /opt/steam
-RUN ./steamcmd.sh +force_install_dir ${SERVERDATA}/workshop-mods +login anonymous +quit
-
-WORKDIR ${TMOD_SERVER_DIR}
-
-# Get the terraria stuff
-RUN curl -sqL https://github.com/tModLoader/tModLoader/releases/download/${TMOD_VERSION}/tModLoader.zip -o tModLoader.zip
-RUN unzip -o tModLoader.zip && rm tModLoader.zip
-
-ADD /config/ /config/
-ADD scripts /opt/scripts
-RUN chown -R terraria:terraria /config /opt && \
-    chmod -R 755 /config /opt
-
+# create server user
+ARG UID
+ARG GID
+RUN addgroup -g $GID terraria \
+    && adduser terraria -u $UID -G terraria -h /opt/terraria -D
 USER terraria
+ENV USER terraria
+ENV HOME /opt/terraria
+WORKDIR $HOME
 
-ENTRYPOINT ["/opt/scripts/start.sh"]
+# Update SteamCMD and verify latest version
+RUN steamcmd +quit
+
+RUN curl -O https://raw.githubusercontent.com/tModLoader/tModLoader/1.4/patches/tModLoader/Terraria/release_extras/DedicatedServerUtils/manage-tModLoaderServer.sh \
+    && chmod u+x manage-tModLoaderServer.sh \
+    && ./manage-tModLoaderServer.sh -i -g --no-mods \
+    && chmod u+x /opt/terraria/tModLoader/start-tModLoaderServer.sh
+
+COPY scripts /opt/terraria
+EXPOSE 7777
+
+ENTRYPOINT ["/opt/terraria/start.sh"]

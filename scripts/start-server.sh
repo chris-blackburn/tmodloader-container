@@ -2,10 +2,8 @@
 
 set -e
 
-SERVER_DIR=/opt/terraria
-
-server="${SERVER_DIR}/LaunchUtils/ScriptCaller.sh -server -steamworkshopfolder ${SERVER_DIR}/workshop-mods/steamapps/workshop"
-server="$server ${GAME_PARAMS}"
+server="/opt/terraria/tModLoader/start-tModLoaderServer.sh -nosteam -steamworkshopfolder /opt/terraria/.local/share/Terraria/wsmods/steamapps/workshop"
+server="$server -config /opt/terraria/.local/share/Terraria/serverconfig.txt"
 
 pipe=/tmp/tmodloader.pipe
 
